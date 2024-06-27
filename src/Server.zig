@@ -550,7 +550,7 @@ fn initializeHandler(server: *Server, _: std.mem.Allocator, request: types.Initi
         if (maybe_config_result) |*config_result| {
             defer config_result.deinit(server.allocator);
             switch (config_result.*) {
-                .success => |config_with_path| try server.updateConfiguration2(cfg, config_with_path.config.value),
+                .success => |config_with_path| try server.updateConfiguration2(config_with_path.config.value),
                 .failure => |payload| blk: {
                     try server.updateConfiguration(cfg);
                     const message = try payload.toMessage(server.allocator) orelse break :blk;
@@ -813,10 +813,13 @@ fn didChangeConfigurationHandler(server: *Server, arena: std.mem.Allocator, noti
     try server.updateConfiguration(new_config);
 }
 
-pub fn updateConfiguration2(server: *Server, cfg: configuration.Configuration, new_config: Config) error{OutOfMemory}!void {
+pub fn updateConfiguration2(server: *Server, new_config: Config) error{OutOfMemory}!void {
+    var cfg = configuration.Configuration{};
+
     inline for (std.meta.fields(Config)) |field| {
         @field(cfg, field.name) = @field(new_config, field.name);
     }
+
     try server.updateConfiguration(cfg);
 }
 
