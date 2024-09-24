@@ -476,11 +476,22 @@ pub fn locToSlice(text: []const u8, loc: Loc) []const u8 {
 }
 
 pub fn locToRange(text: []const u8, loc: Loc, encoding: Encoding) types.Range {
-    std.debug.assert(loc.start <= loc.end and loc.end <= text.len);
-    const start = indexToPosition(text, loc.start, encoding);
+    var loc_start = loc.start;
+    var loc_end = loc.end;
+
+    if (loc_start > loc_end) {
+        loc_start = loc_end;
+        loc_end = loc.start;
+    }
+
+    if (loc_start > text.len) loc_start = text.len;
+    if (loc_end > text.len) loc_end = text.len;
+
+    const start = indexToPosition(text, loc_start, encoding);
+
     return .{
         .start = start,
-        .end = advancePosition(text, start, loc.start, loc.end, encoding),
+        .end = advancePosition(text, start, loc_start, loc_end, encoding),
     };
 }
 
@@ -489,10 +500,17 @@ pub fn rangeToSlice(text: []const u8, range: types.Range, encoding: Encoding) []
 }
 
 pub fn rangeToLoc(text: []const u8, range: types.Range, encoding: Encoding) Loc {
-    std.debug.assert(orderPosition(range.start, range.end) != .gt);
+    var start = range.start;
+    var end = range.end;
+
+    if (orderPosition(start, end) == .gt) {
+        start = end;
+        end = range.start;
+    }
+
     return .{
-        .start = positionToIndex(text, range.start, encoding),
-        .end = positionToIndex(text, range.end, encoding),
+        .start = positionToIndex(text, start, encoding),
+        .end = positionToIndex(text, end, encoding),
     };
 }
 
